@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MapPin, Briefcase, GraduationCap, Edit3, Eye, ChevronDown, Save, Check } from 'lucide-react';
 import Header from "../components/Header";
 import { auth, db } from '../firebase/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 
@@ -17,6 +17,9 @@ const Profile = () => {
     const [profileData, setProfileData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [userInfo, setUserInfo] = useState(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editFormData, setEditFormData] = useState({});
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
       const fetchProfileData = async () => {
@@ -70,10 +73,31 @@ const Profile = () => {
                   <h2 className="text-xl font-semibold text-gray-900 mb-1">Personal Information</h2>
                   <p className="text-sm text-gray-500">Manage your basic profile information</p>
                 </div>
-                <button className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md hover:bg-gray-50">
-                  <Edit3 className="w-4 h-4" />
-                  <span>Edit</span>
-                </button>
+                {!isEditing ? (
+                  <button 
+                    onClick={handleEdit}
+                    className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md hover:bg-gray-50"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                    <span>Edit</span>
+                  </button>
+                ) : (
+                  <div className="flex space-x-2">
+                    <button 
+                      onClick={handleCancel}
+                      className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={handleSave}
+                      disabled={saving}
+                      className="px-4 py-2 text-sm text-white bg-red-600 hover:bg-red-700 rounded-md disabled:opacity-50"
+                    >
+                      {saving ? 'Saving...' : 'Save'}
+                    </button>
+                  </div>
+                )}
               </div>
   
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -81,14 +105,32 @@ const Profile = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     First Name *
                   </label>
-                  <div className="text-gray-900">{profileData?.personalInfo?.firstName || 'Not provided'}</div>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editFormData.firstName || ''}
+                      onChange={(e) => handleInputChange('firstName', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    />
+                  ) : (
+                    <div className="text-gray-900">{profileData?.personalInfo?.firstName || 'Not provided'}</div>
+                  )}
                 </div>
   
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Last Name *
                   </label>
-                  <div className="text-gray-900">{profileData?.personalInfo?.lastName || 'Not provided'}</div>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editFormData.lastName || ''}
+                      onChange={(e) => handleInputChange('lastName', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    />
+                  ) : (
+                    <div className="text-gray-900">{profileData?.personalInfo?.lastName || 'Not provided'}</div>
+                  )}
                 </div>
   
                 <div className="md:col-span-2">
@@ -104,7 +146,16 @@ const Profile = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Date of Birth
                   </label>
-                  <div className="text-gray-900">{profileData?.personalInfo?.dateOfBirth || 'Not provided'}</div>
+                  {isEditing ? (
+                    <input
+                      type="date"
+                      value={editFormData.dateOfBirth || ''}
+                      onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    />
+                  ) : (
+                    <div className="text-gray-900">{profileData?.personalInfo?.dateOfBirth || 'Not provided'}</div>
+                  )}
                 </div>
   
                 <div>
@@ -118,35 +169,87 @@ const Profile = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Country
                   </label>
-                  <div className="text-gray-900">{profileData?.familyBackground?.country || 'Not provided'}</div>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editFormData.country || ''}
+                      onChange={(e) => handleInputChange('country', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    />
+                  ) : (
+                    <div className="text-gray-900">{profileData?.familyBackground?.country || 'Not provided'}</div>
+                  )}
                 </div>
   
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     City
                   </label>
-                  <div className="text-gray-900">{profileData?.familyBackground?.city || 'Not provided'}</div>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editFormData.city || ''}
+                      onChange={(e) => handleInputChange('city', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    />
+                  ) : (
+                    <div className="text-gray-900">{profileData?.familyBackground?.city || 'Not provided'}</div>
+                  )}
                 </div>
   
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     About Yourself
                   </label>
-                  <div className="text-gray-900">{profileData?.personalInfo?.aboutMe || 'Not provided'}</div>
+                  {isEditing ? (
+                    <textarea
+                      value={editFormData.aboutMe || ''}
+                      onChange={(e) => handleInputChange('aboutMe', e.target.value)}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    />
+                  ) : (
+                    <div className="text-gray-900">{profileData?.personalInfo?.aboutMe || 'Not provided'}</div>
+                  )}
                 </div>
   
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Marital Status
                   </label>
-                  <div className="text-gray-900">{profileData?.familyBackground?.maritalStatus || 'Not provided'}</div>
+                  {isEditing ? (
+                    <select
+                      value={editFormData.maritalStatus || ''}
+                      onChange={(e) => handleInputChange('maritalStatus', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    >
+                      <option value="">Select status</option>
+                      <option value="Never Married">Never Married</option>
+                      <option value="Divorced">Divorced</option>
+                      <option value="Widowed">Widowed</option>
+                    </select>
+                  ) : (
+                    <div className="text-gray-900">{profileData?.familyBackground?.maritalStatus || 'Not provided'}</div>
+                  )}
                 </div>
   
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Gender
                   </label>
-                  <div className="text-gray-900">{profileData?.personalInfo?.gender || 'Not provided'}</div>
+                  {isEditing ? (
+                    <select
+                      value={editFormData.gender || ''}
+                      onChange={(e) => handleInputChange('gender', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    >
+                      <option value="">Select gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                    </select>
+                  ) : (
+                    <div className="text-gray-900">{profileData?.personalInfo?.gender || 'Not provided'}</div>
+                  )}
                 </div>
 
                 <div>
@@ -394,6 +497,77 @@ const Profile = () => {
           return null;
       }
     };
+
+    const handleEdit = () => {
+      setEditFormData({
+        firstName: profileData?.personalInfo?.firstName || '',
+        lastName: profileData?.personalInfo?.lastName || '',
+        dateOfBirth: profileData?.personalInfo?.dateOfBirth || '',
+        gender: profileData?.personalInfo?.gender || '',
+        aboutMe: profileData?.personalInfo?.aboutMe || '',
+        expectations: profileData?.personalInfo?.expectations || '',
+        healthConditions: profileData?.personalInfo?.healthConditions || '',
+        country: profileData?.familyBackground?.country || '',
+        city: profileData?.familyBackground?.city || '',
+        maritalStatus: profileData?.familyBackground?.maritalStatus || ''
+      });
+      setIsEditing(true);
+    };
+
+    const handleCancel = () => {
+      setIsEditing(false);
+      setEditFormData({});
+    };
+
+    const handleSave = async () => {
+      setSaving(true);
+      try {
+        const user = auth.currentUser;
+        if (!user) {
+          toast.error('No authenticated user found.');
+          return;
+        }
+
+        const updatedProfileData = {
+          ...profileData,
+          personalInfo: {
+            ...profileData.personalInfo,
+            firstName: editFormData.firstName,
+            lastName: editFormData.lastName,
+            dateOfBirth: editFormData.dateOfBirth,
+            gender: editFormData.gender,
+            aboutMe: editFormData.aboutMe,
+            expectations: editFormData.expectations,
+            healthConditions: editFormData.healthConditions
+          },
+          familyBackground: {
+            ...profileData.familyBackground,
+            country: editFormData.country,
+            city: editFormData.city,
+            maritalStatus: editFormData.maritalStatus
+          }
+        };
+
+        await updateDoc(doc(db, 'userProfileData', user.uid), updatedProfileData);
+        setProfileData(updatedProfileData);
+        setIsEditing(false);
+        setEditFormData({});
+        toast.success('Profile updated successfully!');
+      } catch (error) {
+        console.error('Error updating profile:', error);
+        toast.error('Failed to update profile');
+      } finally {
+        setSaving(false);
+      }
+    };
+
+    const handleInputChange = (field, value) => {
+      setEditFormData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    };
+  
     return (
     <>
       <Header />

@@ -20,13 +20,12 @@ export const CareerEducationStep: React.FC<CareerEducationStepProps> = ({ data, 
   
   const educationOptions = [
     { value: 'high-school', label: 'High School' },
-    { value: 'bachelors', label: 'Bachelor\'s Degree' },
-    { value: 'masters', label: 'Master\'s Degree' },
+    { value: 'bachelors', label: "Bachelor's Degree" },
+    { value: 'masters', label: "Master's Degree" },
     { value: 'phd', label: 'PhD' },
     { value: 'diploma', label: 'Diploma' },
-    { value: 'other', label: 'Other' },
+    { value: 'other', label: 'Other' }
   ];
-
   const occupationOptions = [
     { value: 'engineer', label: 'Engineer' },
     { value: 'doctor', label: 'Doctor' },

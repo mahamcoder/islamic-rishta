@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from 'react-router-dom';
 import {
   Search,
@@ -12,180 +12,98 @@ import {
   User,
   Bell,
 } from "lucide-react";
-
-const mockProfiles = [
-  {
-    id: "1",
-    name: "Ehhe Jrir",
-    age: 18,
-    maritalStatus: "never-married",
-    location: "Hgh",
-    education: "bachelors",
-    profession: "engineer",
-    isOnline: false,
-  },
-  {
-    id: "2",
-    name: "hus tile",
-    age: 18,
-    maritalStatus: "never-married",
-    location: "sika",
-    education: "masters",
-    profession: "doctor",
-    isOnline: false,
-  },
-  {
-    id: "3",
-    name: "asad ali",
-    age: 18,
-    maritalStatus: "divorced",
-    location: "sika",
-    education: "high-school",
-    profession: "teacher",
-    isOnline: false,
-  },
-  {
-    id: "4",
-    name: "Abdul Salam",
-    age: 24,
-    maritalStatus: "divorced",
-    location: "sales person",
-    education: "bachelors",
-    profession: "manager",
-    isOnline: false,
-  },
-  {
-    id: "5",
-    name: "skyskey athnat",
-    age: 27,
-    maritalStatus: "divorced",
-    location: "ti",
-    education: "bachelors",
-    profession: "nurse",
-    isOnline: false,
-  },
-  {
-    id: "6",
-    name: "gfdgdf Three",
-    age: 23,
-    maritalStatus: "divorced",
-    location: "fgfgf",
-    education: "bachelors",
-    profession: "architect",
-    isOnline: false,
-  },
-  {
-    id: "7",
-    name: "Aqib Ali",
-    age: 20,
-    maritalStatus: "never-married",
-    location: "Software",
-    education: "high-school",
-    profession: "engineer",
-    isOnline: false,
-  },
-  {
-    id: "8",
-    name: "gfdgdf Three",
-    age: 26,
-    maritalStatus: "never-married",
-    location: "cghgcf",
-    education: "high-school",
-    profession: "doctor",
-    isOnline: false,
-  },
-  {
-    id: "9",
-    name: "Aqib Ali",
-    age: 22,
-    maritalStatus: "divorced",
-    location: "Software",
-    education: "bachelors",
-    profession: "teacher",
-    isOnline: false,
-  },
-  {
-    id: "10",
-    name: "Aqib Ali",
-    age: 22,
-    maritalStatus: "divorced",
-    location: "Software",
-    education: "bachelors",
-    profession: "manager",
-    isOnline: false,
-  },
-  {
-    id: "11",
-    name: "gfhgf fgh",
-    age: 30,
-    maritalStatus: "divorced",
-    location: "fgh",
-    education: "bachelors",
-    profession: "nurse",
-    isOnline: false,
-  },
-  {
-    id: "12",
-    name: "sfs sdf",
-    age: 18,
-    maritalStatus: "divorced",
-    location: "ds",
-    education: "high-school",
-    profession: "architect",
-    isOnline: false,
-  },
-];
+import { auth, db } from '../firebase/firebase';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { toast } from 'react-toastify';
 
 const countries = [
   "All Countries",
+  "Afghanistan",
+  "Albania",
+  "Algeria",
+  "Azerbaijan",
+  "Bahrain",
+  "Bangladesh",
+  "Brunei",
+  "Burkina Faso",
+  "Chad",
+  "Comoros",
+  "Djibouti",
+  "Egypt",
+  "Gambia",
+  "Guinea",
+  "Indonesia",
+  "Iran",
+  "Iraq",
+  "Jordan",
+  "Kazakhstan",
+  "Kuwait",
+  "Kyrgyzstan",
+  "Lebanon",
+  "Libya",
+  "Malaysia",
+  "Maldives",
+  "Mali",
+  "Mauritania",
+  "Morocco",
+  "Niger",
+  "Oman",
+  "Pakistan",
+  "Palestine",
+  "Qatar",
+  "Saudi Arabia",
+  "Senegal",
+  "Sierra Leone",
+  "Somalia",
+  "Sudan",
+  "Syria",
+  "Tajikistan",
+  "Tunisia",
+  "Turkey",
+  "Turkmenistan",
+  "United Arab Emirates",
+  "Uzbekistan",
+  "Western Sahara",
+  "Yemen",
   "United States",
   "United Kingdom",
   "Canada",
   "Australia",
-  "Germany",
   "France",
+  "Germany",
   "Italy",
   "Spain",
-  "Netherlands",
-  "India",
-  "Pakistan",
-  "Bangladesh",
-  "Saudi Arabia",
-  "UAE",
-  "Turkey",
-  "Egypt",
-  "Morocco",
-  "Nigeria",
-  "South Africa",
-  "China",
   "Japan",
-  "South Korea",
-  "Singapore",
-  "Malaysia",
-  "Indonesia",
-  "Thailand",
-  "Philippines",
+  "China",
+  "Russia",
   "Brazil",
-  "Mexico",
+  "South Africa",
+  "South Korea",
+  "New Zealand"
 ];
 
-const maritalStatuses = ["All Status", "never married", "divorced", "widowed"];
+
+const maritalStatuses = ["All Status", "Never Married", "Divorced", "Widowed"];
 const educationLevels = [
   "All Education Levels",
-  "bachelor degree",
-  "masters degree",
-  "diploma",
-  "phd",
-  "high-school",
+  "High School",
+  "Bachelor's Degree",
+  "Master's Degree",
+  "PhD",
+  "Diploma",
+  "Other"
 ];
 const professions = [
   "All Professions",
-  "engineer",
-  "doctor",
-  "teacher",
-  "manager",
-  "nurse",
-  "architect",
+  "Engineer",
+  "Doctor",
+  "Teacher",
+  "Manager",
+  "Nurse",
+  "Architect",
+  "Software Engineer",
+  "Business Analyst",
+  "Consultant",
 ];
 
 const SearchPage = () => {
@@ -194,13 +112,12 @@ const SearchPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [ageRange, setAgeRange] = useState([18, 50]);
   const [selectedCountry, setSelectedCountry] = useState("All Countries");
-  const [selectedMaritalStatus, setSelectedMaritalStatus] =
-    useState("All Status");
-  const [selectedEducation, setSelectedEducation] = useState(
-    "All Education Levels"
-  );
-  const [selectedProfession, setSelectedProfession] =
-    useState("All Professions");
+  const [selectedMaritalStatus, setSelectedMaritalStatus] = useState("All Status");
+  const [selectedEducation, setSelectedEducation] = useState("All Education Levels");
+  const [selectedProfession, setSelectedProfession] = useState("All Professions");
+  const [profiles, setProfiles] = useState([]);
+  const [filteredProfiles, setFilteredProfiles] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const sortOptions = [
     "Newest First",
@@ -210,29 +127,253 @@ const SearchPage = () => {
     "Online First",
   ];
 
+  // Fetch all user profiles from Firestore
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      try {
+        setLoading(true);
+        
+        console.log('Fetching profiles from userProfileData collection...');
+        
+        const profilesCollection = collection(db, 'userProfileData');
+        const profilesSnapshot = await getDocs(profilesCollection);
+        const profilesData = [];
+        
+        console.log('Total documents found in userProfileData:', profilesSnapshot.size);
+        
+        if (profilesSnapshot.size === 0) {
+          console.log('No documents found in userProfileData collection');
+          console.log('Checking if there are other collections...');
+          
+          // Let's also check if there are users in the 'users' collection (Realtime Database equivalent)
+          // For now, we'll show a message
+          toast.info('No profiles found in userProfileData collection. Users might not have completed their profiles yet.');
+        }
+        
+        profilesSnapshot.forEach((doc) => {
+          const data = doc.data();
+          console.log('Document ID:', doc.id);
+          console.log('Document data:', data);
+          console.log('Has personalInfo:', !!data.personalInfo);
+          console.log('Has profileCompleted:', data.profileCompleted);
+          
+          // Show ALL profiles without any filtering conditions
+          // Calculate age from date of birth
+          let age = 25; // default age
+          if (data.personalInfo?.dateOfBirth) {
+            try {
+              const birthDate = new Date(data.personalInfo.dateOfBirth);
+              const today = new Date();
+              
+              // Check if the date is valid
+              if (!isNaN(birthDate.getTime()) && birthDate < today) {
+                age = today.getFullYear() - birthDate.getFullYear();
+                const monthDiff = today.getMonth() - birthDate.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                  age--;
+                }
+                // Ensure age is reasonable
+                if (age < 18 || age > 100) {
+                  age = 25; // fallback to default
+                }
+              }
+            } catch (error) {
+              console.log('Error calculating age for profile:', doc.id, error);
+              age = 25; // fallback to default
+            }
+          }
+
+          const profileData = {
+            id: doc.id,
+            name: data.personalInfo ? `${data.personalInfo.firstName || ''} ${data.personalInfo.lastName || ''}`.trim() || 'Anonymous' : 'Anonymous',
+            age: age,
+            maritalStatus: data.familyBackground?.maritalStatus || 'Not specified',
+            location: data.familyBackground ? `${data.familyBackground.city || ''}, ${data.familyBackground.country || ''}`.trim() || 'Location not specified' : 'Location not specified',
+            education: data.careerEducation?.education || 'Not specified',
+            profession: data.careerEducation?.occupation || 'Not specified',
+            aboutMe: data.personalInfo?.aboutMe || '',
+            gender: data.personalInfo?.gender || 'Not specified',
+            expectations: data.personalInfo?.expectations || '',
+            healthConditions: data.personalInfo?.healthConditions || '',
+            isOnline: false, // You can implement online status later
+            createdAt: data.profileCompletedAt || data.createdAt || new Date().toISOString(),
+            personalInfo: data.personalInfo || {},
+            familyBackground: data.familyBackground || {},
+            careerEducation: data.careerEducation || {},
+            religiousInfo: data.religiousInfo || {}
+          };
+          
+          console.log('Processed profile data:', profileData);
+          profilesData.push(profileData);
+        });
+        
+        console.log('Final profiles to display:', profilesData.length);
+        console.log('All profiles:', profilesData);
+        
+        setProfiles(profilesData);
+        setFilteredProfiles(profilesData);
+      } catch (error) {
+        console.error('Error fetching profiles:', error);
+        toast.error('Failed to load profiles: ' + error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfiles();
+  }, []);
+
+  // Debug function to check all collections
+  const debugCollections = async () => {
+    try {
+      console.log('=== DEBUGGING COLLECTIONS ===');
+      
+      // Check userProfileData collection
+      const userProfileCollection = collection(db, 'userProfileData');
+      const userProfileSnapshot = await getDocs(userProfileCollection);
+      console.log('userProfileData collection size:', userProfileSnapshot.size);
+      
+      // Check if there's a 'users' collection
+      try {
+        const usersCollection = collection(db, 'users');
+        const usersSnapshot = await getDocs(usersCollection);
+        console.log('users collection size:', usersSnapshot.size);
+      } catch (e) {
+        console.log('users collection does not exist or is not accessible');
+      }
+      
+      // Check if there's a 'profiles' collection
+      try {
+        const profilesCollection = collection(db, 'profiles');
+        const profilesSnapshot = await getDocs(profilesCollection);
+        console.log('profiles collection size:', profilesSnapshot.size);
+      } catch (e) {
+        console.log('profiles collection does not exist or is not accessible');
+      }
+      
+      console.log('=== END DEBUGGING ===');
+    } catch (error) {
+      console.error('Error debugging collections:', error);
+    }
+  };
+
+  // Call debug function on mount
+  useEffect(() => {
+    debugCollections();
+  }, []);
+
+  // Filter profiles based on search criteria
+  useEffect(() => {
+    let filtered = [...profiles];
+    console.log('Starting with profiles:', filtered.length);
+
+    // Search query filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(profile => 
+        profile.name.toLowerCase().includes(query) ||
+        profile.location.toLowerCase().includes(query) ||
+        profile.profession.toLowerCase().includes(query) ||
+        profile.education.toLowerCase().includes(query)
+      );
+      console.log('After search query filter:', filtered.length);
+    }
+
+    // Age range filter
+    filtered = filtered.filter(profile => 
+      profile.age >= ageRange[0] && profile.age <= ageRange[1]
+    );
+    console.log('After age range filter:', filtered.length);
+
+    // Country filter
+    if (selectedCountry !== "All Countries") {
+      filtered = filtered.filter(profile => 
+        profile.location.toLowerCase().includes(selectedCountry.toLowerCase())
+      );
+      console.log('After country filter:', filtered.length);
+    }
+
+    // Marital status filter
+    if (selectedMaritalStatus !== "All Status") {
+      filtered = filtered.filter(profile => 
+        profile.maritalStatus.toLowerCase() === selectedMaritalStatus.toLowerCase()
+      );
+      console.log('After marital status filter:', filtered.length);
+    }
+
+    // Education filter
+    if (selectedEducation !== "All Education Levels") {
+      filtered = filtered.filter(profile => 
+        profile.education.toLowerCase().includes(selectedEducation.toLowerCase())
+      );
+      console.log('After education filter:', filtered.length);
+    }
+
+    // Profession filter
+    if (selectedProfession !== "All Professions") {
+      filtered = filtered.filter(profile => 
+        profile.profession.toLowerCase().includes(selectedProfession.toLowerCase())
+      );
+      console.log('After profession filter:', filtered.length);
+    }
+
+    // Sort profiles
+    switch (sortBy) {
+      case "Age: Low to High":
+        filtered.sort((a, b) => a.age - b.age);
+        break;
+      case "Age: High to Low":
+        filtered.sort((a, b) => b.age - a.age);
+        break;
+      case "Name: A to Z":
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case "Online First":
+        filtered.sort((a, b) => (b.isOnline ? 1 : 0) - (a.isOnline ? 1 : 0));
+        break;
+      case "Newest First":
+      default:
+        filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        break;
+    }
+
+    console.log('Final filtered profiles:', filtered.length);
+    console.log('Filtered profiles:', filtered);
+    setFilteredProfiles(filtered);
+  }, [profiles, searchQuery, ageRange, selectedCountry, selectedMaritalStatus, selectedEducation, selectedProfession, sortBy]);
+
+  const clearAllFilters = () => {
+    setSearchQuery("");
+    setAgeRange([18, 50]);
+    setSelectedCountry("All Countries");
+    setSelectedMaritalStatus("All Status");
+    setSelectedEducation("All Education Levels");
+    setSelectedProfession("All Professions");
+  };
+
   const getMaritalStatusDisplay = (status) => {
-    switch (status) {
-      case "never-married":
-        return "never married";
+    switch (status.toLowerCase()) {
+      case "never married":
+        return "Never Married";
       case "divorced":
-        return "divorced";
+        return "Divorced";
       case "widowed":
-        return "widowed";
+        return "Widowed";
       default:
         return status;
     }
   };
 
   const getEducationDisplay = (education) => {
-    switch (education) {
-      case "bachelors":
-        return "bachelors";
-      case "masters":
-        return "masters";
-      case "high-school":
-        return "high school";
+    switch (education.toLowerCase()) {
+      case "bachelor's degree":
+        return "Bachelor's Degree";
+      case "master's degree":
+        return "Master's Degree";
+      case "high school":
+        return "High School";
       case "diploma":
-        return "diploma";
+        return "Diploma";
       case "phd":
         return "PhD";
       default:
@@ -247,7 +388,7 @@ const SearchPage = () => {
           <Camera className="w-8 h-8 text-gray-400" />
         </div>
         <div className="absolute top-3 left-3 bg-gray-500 text-white text-xs px-2 py-1 rounded">
-          Offline
+          {profile.isOnline ? 'Online' : 'Offline'}
         </div>
       </div>
       <div className="p-4">
@@ -291,7 +432,7 @@ const SearchPage = () => {
           <Camera className="w-6 h-6 text-gray-400" />
         </div>
         <div className="absolute -top-1 -right-1 bg-gray-500 text-white text-xs px-2 py-1 rounded">
-          Offline
+          {profile.isOnline ? 'Online' : 'Offline'}
         </div>
       </div>
 
@@ -375,6 +516,17 @@ const SearchPage = () => {
     );
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading profiles...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -422,7 +574,11 @@ const SearchPage = () => {
                 <h2 className="text-lg font-semibold text-gray-900">
                   Search Filters
                 </h2>
-                <button className="text-red-500 text-sm hover:text-red-600" type="button">
+                <button 
+                  onClick={clearAllFilters}
+                  className="text-red-500 text-sm hover:text-red-600" 
+                  type="button"
+                >
                   Clear All
                 </button>
               </div>
@@ -472,19 +628,6 @@ const SearchPage = () => {
                     options={countries}
                     onChange={setSelectedCountry}
                     placeholder="Select Country"
-                  />
-                </div>
-
-                {/* Sect */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Sect
-                  </label>
-                  <Dropdown
-                    value="All Sects"
-                    options={["All Sects", "Sunni", "Shia", "Other"]}
-                    onChange={() => {}}
-                    placeholder="Select Sect"
                   />
                 </div>
 
@@ -538,7 +681,7 @@ const SearchPage = () => {
                   Search Profiles
                 </h2>
                 <p className="text-gray-600">
-                  Found {mockProfiles.length} profiles matching your criteria
+                  Found {filteredProfiles.length} profiles matching your criteria
                 </p>
               </div>
 
@@ -580,15 +723,23 @@ const SearchPage = () => {
             </div>
 
             {/* Profiles Grid/List */}
-            {isGridView ? (
+            {filteredProfiles.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-gray-400 mb-4">
+                  <Search className="w-16 h-16 mx-auto" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No profiles found</h3>
+                <p className="text-gray-600">Try adjusting your search criteria</p>
+              </div>
+            ) : isGridView ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {mockProfiles.map((profile) => (
+                {filteredProfiles.map((profile) => (
                   <ProfileCard key={profile.id} profile={profile} />
                 ))}
               </div>
             ) : (
               <div className="space-y-4">
-                {mockProfiles.map((profile) => (
+                {filteredProfiles.map((profile) => (
                   <ProfileListItem key={profile.id} profile={profile} />
                 ))}
               </div>
